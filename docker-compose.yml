@@ -7,8 +7,6 @@
 #   API Docs: http://localhost:8000/docs
 #   Health:   http://localhost:8000/health
 
-version: '3.8'
-
 services:
   # ==========================================================================
   # TrustVision AI API
