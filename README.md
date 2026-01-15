@@ -1,8 +1,12 @@
 # TrustVision AI
 
-> **Video Authenticity & Liveness Detection API**
+> **Video Authenticity & Liveness Detection Platform**
 
-A comprehensive ML-powered API for detecting deepfakes, verifying liveness, and analyzing video authenticity using state-of-the-art models from HuggingFace and OpenAI.
+A comprehensive ML-powered platform for detecting deepfakes, verifying liveness, and analyzing video authenticity using state-of-the-art models from HuggingFace and OpenAI.
+
+**Two Deployment Options:**
+- **Real-time Web App** (Port 5001) - Live webcam analysis with interactive UI
+- **REST API** (Port 8000) - File upload-based analysis for integration
 
 ---
 
@@ -10,6 +14,7 @@ A comprehensive ML-powered API for detecting deepfakes, verifying liveness, and 
 
 - [Overview](#overview)
 - [Features](#features)
+- [Real-time Web Application](#real-time-web-application)
 - [Architecture](#architecture)
 - [Models Used](#models-used)
 - [Quick Start](#quick-start)
@@ -69,6 +74,75 @@ Converts speech to text using OpenAI Whisper:
 - **Timestamp Alignment**: Word/segment level timestamps
 - **Noise Robust**: Handles various audio qualities
 
+### 5. Safety Hazard Detection (NEW)
+YOLO-based object detection for senior living environments:
+- **Real-time Detection**: Identifies potential hazards in living spaces
+- **Mobile Friendly**: Works on phones with front/back camera switching
+- **Alert System**: Visual alerts for detected hazards
+
+---
+
+## Real-time Web Application
+
+The platform includes a **real-time web application** with live webcam support, designed for interactive demonstrations and mobile use.
+
+### Access Points
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Web App** | http://localhost:5001 | Real-time webcam analysis |
+| **REST API** | http://localhost:8000/docs | File upload API with Swagger UI |
+
+### Two Analysis Modes
+
+#### Mode 1: Live Interview Analysis
+Perfect for remote interview verification and KYC processes.
+
+**Features:**
+- Real-time liveness detection with blink counting
+- Eye Aspect Ratio (EAR) monitoring
+- Deepfake detection on live video feed
+- Head rotation tracking
+- Visual status badges (LIVE / CHECKING / FAKE)
+
+**Use Cases:**
+- Remote job interviews
+- Video KYC for banking
+- Identity verification
+
+#### Mode 2: Safety Hazard Scanner
+YOLO-powered object detection for senior living safety assessments.
+
+**Features:**
+- Real-time hazard detection using YOLOv8
+- Mobile-friendly with camera flip (front/back)
+- Detection box overlays on video
+- Room safety status indicator
+- Alert panel with detected objects
+
+**Detectable Objects:**
+- Electrical hazards (exposed wires, overloaded outlets)
+- Trip hazards (loose rugs, clutter)
+- Fire hazards (candles, space heaters)
+- General safety concerns
+
+### Screenshots
+
+```
+┌─────────────────────────────────────────────┐
+│         TrustVision AI                      │
+│                                             │
+│  ┌─────────────┐    ┌─────────────┐        │
+│  │  INTERVIEW  │    │   SAFETY    │        │
+│  │  ANALYSIS   │    │   SCANNER   │        │
+│  │             │    │             │        │
+│  │  Liveness + │    │  YOLO-based │        │
+│  │  Deepfake   │    │  Hazard Det │        │
+│  └─────────────┘    └─────────────┘        │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
 ---
 
 ## Architecture
@@ -122,12 +196,14 @@ Converts speech to text using OpenAI Whisper:
 | **Speech-to-Text** | `openai/whisper-base` | OpenAI | Audio transcription |
 | **Deepfake Detection** | `dima806/deepfake_vs_real_image_detection` | HuggingFace | Detect AI-generated faces |
 | **Face Analysis** | MediaPipe Face Mesh | Google | 468 facial landmarks for liveness & lip-sync |
+| **Object Detection** | YOLOv8n | Ultralytics | Real-time hazard detection |
 
 ### Why These Models?
 
 1. **Whisper** - State-of-the-art ASR with excellent noise robustness and multilingual support
 2. **ViT Deepfake Detector** - Vision Transformer architecture achieves high accuracy on deepfake detection
 3. **MediaPipe** - Fast, accurate facial landmark detection optimized for real-time applications
+4. **YOLOv8** - Best-in-class object detection with real-time performance on CPU
 
 ---
 
@@ -153,18 +229,33 @@ cp .env.example .env
 ### 2. Build & Run with Docker
 
 ```bash
-# Build and start the container
+# Build and start all services
 docker-compose up --build
 
-# Or run in background
+# Or run in background (detached mode)
 docker-compose up -d --build
+
+# Check status
+docker-compose ps
 ```
 
-### 3. Access the API
+### 3. Access the Platform
 
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **ReDoc**: http://localhost:8000/redoc
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Web Application** | http://localhost:5001 | Real-time webcam analysis |
+| **API Documentation** | http://localhost:8000/docs | Swagger UI for REST API |
+| **API Health Check** | http://localhost:8000/health | API status |
+| **Web App Health** | http://localhost:5001/health | Web app status |
+
+### 4. Using the Web App
+
+1. Open http://localhost:5001 in your browser
+2. Choose a mode:
+   - **Live Interview** - For liveness + deepfake detection
+   - **Safety Scanner** - For hazard detection
+3. Click **Start Analysis** and allow camera access
+4. View real-time results on screen
 
 ---
 
@@ -329,11 +420,20 @@ trustvision-ai/
 │   │   └── voice_transcriber.py    # Whisper transcription
 │   ├── services/
 │   │   └── trust_analyzer.py   # Main orchestration
-│   └── utils/
-│       ├── video_utils.py      # Video processing
-│       └── logger.py           # Structured logging
-├── Dockerfile                  # Container definition
-├── docker-compose.yml          # Orchestration
+│   ├── utils/
+│   │   ├── video_utils.py      # Video processing
+│   │   └── logger.py           # Structured logging
+│   └── webapp/                 # Real-time Web Application
+│       ├── app.py              # Flask-SocketIO server
+│       └── templates/
+│           ├── index.html      # Landing page
+│           ├── interview.html  # Interview analysis mode
+│           └── safety.html     # Safety scanner mode
+├── models/
+│   └── yolov8n.pt              # YOLO model for hazard detection
+├── Dockerfile                  # API container
+├── Dockerfile.webapp           # Web app container
+├── docker-compose.yml          # Multi-service orchestration
 ├── requirements.txt            # Python dependencies
 └── README.md                   # This file
 ```
