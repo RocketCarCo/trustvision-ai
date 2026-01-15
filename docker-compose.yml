@@ -1,0 +1,88 @@
+# TrustVision AI - Docker Compose Configuration
+#
+# Quick Start:
+#   docker-compose up --build
+#
+# Access:
+#   API Docs: http://localhost:8000/docs
+#   Health:   http://localhost:8000/health
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # TrustVision AI API
+  # ==========================================================================
+  trustvision-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trustvision-api
+
+    # Port mapping
+    ports:
+      - "8000:8000"
+
+    # Environment variables
+    environment:
+      - MODEL_CACHE_DIR=/app/models
+      - UPLOAD_DIR=/app/uploads
+      - SAMPLES_DIR=/app/samples
+      - LOG_LEVEL=INFO
+      - DEVICE=cpu
+      - WHISPER_MODEL=base
+      - DEBUG=false
+
+    # Persistent volumes
+    volumes:
+      # Model cache - persists downloaded models between restarts
+      - trustvision_models:/app/models
+      # Upload directory for processing
+      - trustvision_uploads:/app/uploads
+      # Sample files for testing
+      - ./samples:/app/samples:ro
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          # ML models require significant memory
+          memory: 8G
+        reservations:
+          memory: 4G
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # Models take time to load
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ==========================================================================
+# Named Volumes
+# ==========================================================================
+volumes:
+  trustvision_models:
+    driver: local
+    name: trustvision_models
+  trustvision_uploads:
+    driver: local
+    name: trustvision_uploads
+
+# ==========================================================================
+# Networks (optional, for future services)
+# ==========================================================================
+networks:
+  default:
+    name: trustvision_network
