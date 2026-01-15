@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Safety Scanner - TrustVision AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d1b3d 100%);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+        }
+
+        .navbar {
+            background: rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            color: #ff6b6b;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-container {
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .video-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .room-status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .room-status.safe {
+            background: rgba(0, 255, 100, 0.2);
+            border: 2px solid #00ff64;
+            color: #00ff64;
+        }
+
+        .room-status.caution {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #ffc107;
+            color: #ffc107;
+        }
+
+        .room-status.danger {
+            background: rgba(255, 68, 68, 0.2);
+            border: 2px solid #ff4444;
+            color: #ff4444;
+            animation: pulse-danger 1s infinite;
+        }
+
+        @keyframes pulse-danger {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .hazard-count {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-control {
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            flex: 1;
+            justify-content: center;
+            max-width: 200px;
+        }
+
+        .btn-start {
+            background: linear-gradient(90deg, #ff6b6b, #ffc107);
+            color: white;
+        }
+
+        .btn-stop {
+            background: rgba(255, 68, 68, 0.3);
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+        }
+
+        .btn-flip {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-control:hover { transform: scale(1.03); }
+        .btn-control:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .alerts-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .alerts-header h5 {
+            margin: 0;
+            color: #ff6b6b;
+        }
+
+        .alert-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 4px solid;
+        }
+
+        .alert-item.high {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .alert-item.medium {
+            border-color: #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .alert-item.low {
+            border-color: #00ff64;
+            background: rgba(0, 255, 100, 0.05);
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            text-align: center;
+        }
+
+        .alert-item.high .alert-icon { color: #ff4444; }
+        .alert-item.medium .alert-icon { color: #ffc107; }
+        .alert-item.low .alert-icon { color: #00ff64; }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .alert-desc {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .no-alerts {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+        }
+
+        .no-alerts i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #00ff64;
+        }
+
+        .tips-section {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .tips-section h6 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .tips-section ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .tips-section li {
+            margin-bottom: 5px;
+        }
+
+        @media (min-width: 768px) {
+            .video-section {
+                flex-direction: row;
+            }
+            .video-container {
+                flex: 2;
+            }
+            .alerts-panel {
+                flex: 1;
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                aspect-ratio: 3/4;
+            }
+            .room-status {
+                font-size: 0.9rem;
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container-fluid">
+            <a href="/" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <span class="navbar-brand">
+                <i class="fas fa-house-medical"></i> Safety Scanner
+            </span>
+            <span id="connectionStatus" style="color: #888; font-size: 0.85rem;">
+                <i class="fas fa-circle" style="color: #666;"></i> Offline
+            </span>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="video-section">
+            <div class="video-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="overlayCanvas"></canvas>
+
+                <div id="roomStatus" class="room-status safe">
+                    <span><i class="fas fa-shield-check"></i> ROOM SAFE</span>
+                    <span class="hazard-count" id="hazardCount">0 hazards</span>
+                </div>
+            </div>
+
+            <div class="alerts-panel">
+                <div class="alerts-header">
+                    <h5><i class="fas fa-bell"></i> Live Alerts</h5>
+                    <span id="alertCount">0</span>
+                </div>
+
+                <div id="alertsList">
+                    <div class="no-alerts">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No hazards detected</p>
+                        <small>Point camera around the room</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls" style="margin-top: 15px;">
+            <button id="startBtn" class="btn-control btn-start">
+                <i class="fas fa-video"></i> Start Scan
+            </button>
+            <button id="stopBtn" class="btn-control btn-stop" disabled>
+                <i class="fas fa-stop"></i> Stop
+            </button>
+            <button id="flipBtn" class="btn-control btn-flip">
+                <i class="fas fa-camera-rotate"></i> Flip
+            </button>
+        </div>
+
+        <div class="tips-section">
+            <h6><i class="fas fa-lightbulb"></i> Scanning Tips</h6>
+            <ul>
+                <li>Walk slowly around the room pointing camera at floor level</li>
+                <li>Check for items that could cause trips or falls</li>
+                <li>Look for wet floors, loose rugs, and obstacles</li>
+                <li>Scan doorways, stairs, and transition areas carefully</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('overlayCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const flipBtn = document.getElementById('flipBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const roomStatus = document.getElementById('roomStatus');
+        const hazardCount = document.getElementById('hazardCount');
+        const alertsList = document.getElementById('alertsList');
+        const alertCountEl = document.getElementById('alertCount');
+
+        let socket = null;
+        let stream = null;
+        let analysisInterval = null;
+        let sendCanvas = document.createElement('canvas');
+        let sendCtx = sendCanvas.getContext('2d');
+        let facingMode = 'environment'; // Start with back camera
+
+        // Connect WebSocket
+        function connectSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                connectionStatus.innerHTML = '<i class="fas fa-circle" style="color: #00ff64;"></i> Online';
+            });
+
+            socket.on('disconnect', () => {
+                connectionStatus.innerHTML = '<i class="fas fa-circle" style="color: #ff4444;"></i> Offline';
+            });
+
+            socket.on('safety_result', handleResult);
+        }
+
+        // Start camera
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                // Start analysis loop
+                analysisInterval = setInterval(sendFrame, 300); // ~3 FPS for mobile
+
+            } catch (err) {
+                alert('Camera error: ' + err.message);
+            }
+        }
+
+        // Stop camera
+        function stopCamera() {
+            if (analysisInterval) {
+                clearInterval(analysisInterval);
+                analysisInterval = null;
+            }
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            video.srcObject = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        // Flip camera
+        async function flipCamera() {
+            facingMode = facingMode === 'environment' ? 'user' : 'environment';
+            if (stream) {
+                stopCamera();
+                await startCamera();
+            }
+        }
+
+        // Send frame
+        function sendFrame() {
+            if (!socket || !stream) return;
+
+            sendCanvas.width = video.videoWidth;
+            sendCanvas.height = video.videoHeight;
+            sendCtx.drawImage(video, 0, 0);
+
+            const imageData = sendCanvas.toDataURL('image/jpeg', 0.6);
+            socket.emit('analyze_safety', { image: imageData });
+        }
+
+        // Handle result
+        function handleResult(result) {
+            if (result.error) {
+                console.error(result.error);
+                return;
+            }
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update room status
+            const status = result.room_status || 'SAFE';
+            const totalHazards = result.total_hazards || 0;
+
+            hazardCount.textContent = totalHazards + ' hazard' + (totalHazards !== 1 ? 's' : '');
+
+            if (status === 'HAZARDS DETECTED') {
+                roomStatus.className = 'room-status danger';
+                roomStatus.innerHTML = '<span><i class="fas fa-exclamation-triangle"></i> HAZARDS DETECTED</span>' +
+                    '<span class="hazard-count">' + totalHazards + ' hazard' + (totalHazards !== 1 ? 's' : '') + '</span>';
+            } else if (status === 'CAUTION ADVISED') {
+                roomStatus.className = 'room-status caution';
+                roomStatus.innerHTML = '<span><i class="fas fa-exclamation-circle"></i> CAUTION ADVISED</span>' +
+                    '<span class="hazard-count">' + totalHazards + ' item' + (totalHazards !== 1 ? 's' : '') + '</span>';
+            } else {
+                roomStatus.className = 'room-status safe';
+                roomStatus.innerHTML = '<span><i class="fas fa-shield-check"></i> ROOM SAFE</span>' +
+                    '<span class="hazard-count">0 hazards</span>';
+            }
+
+            // Draw detections
+            const detections = result.detections || [];
+            detections.forEach(det => {
+                const [x1, y1, x2, y2] = det.bbox;
+                const color = det.color || '#ffffff';
+
+                // Scale to canvas
+                const scaleX = canvas.width / video.videoWidth;
+                const scaleY = canvas.height / video.videoHeight;
+
+                const sx1 = x1 * scaleX;
+                const sy1 = y1 * scaleY;
+                const sw = (x2 - x1) * scaleX;
+                const sh = (y2 - y1) * scaleY;
+
+                // Draw box
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(sx1, sy1, sw, sh);
+
+                // Draw label
+                ctx.fillStyle = color;
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillRect(sx1, sy1 - 22, ctx.measureText(det.class).width + 10, 22);
+                ctx.fillStyle = '#000';
+                ctx.fillText(det.class.toUpperCase(), sx1 + 5, sy1 - 6);
+            });
+
+            // Update alerts list
+            updateAlerts(result);
+        }
+
+        // Update alerts panel
+        function updateAlerts(result) {
+            const highRisk = result.high_risk_items || [];
+            const mediumRisk = result.medium_risk_items || [];
+            const allAlerts = [...highRisk, ...mediumRisk];
+
+            alertCountEl.textContent = allAlerts.length;
+
+            if (allAlerts.length === 0) {
+                alertsList.innerHTML = `
+                    <div class="no-alerts">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No hazards detected</p>
+                        <small>Area appears safe</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            highRisk.forEach(item => {
+                html += `
+                    <div class="alert-item high">
+                        <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-title">${item.class.toUpperCase()}</div>
+                            <div class="alert-desc">${item.message}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            mediumRisk.forEach(item => {
+                html += `
+                    <div class="alert-item medium">
+                        <div class="alert-icon"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-title">${item.class.toUpperCase()}</div>
+                            <div class="alert-desc">${item.message}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            alertsList.innerHTML = html;
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startCamera);
+        stopBtn.addEventListener('click', stopCamera);
+        flipBtn.addEventListener('click', flipCamera);
+
+        // Initialize
+        connectSocket();
+    </script>
+</body>
+</html>

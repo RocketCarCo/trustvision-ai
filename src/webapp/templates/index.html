@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TrustVision AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #a0a0a0;
+            margin-bottom: 50px;
+            max-width: 600px;
+        }
+
+        .mode-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .mode-card {
+            flex: 1;
+            min-width: 280px;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px 30px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .mode-card:hover::before {
+            opacity: 1;
+        }
+
+        .mode-card.interview {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+        }
+
+        .mode-card.safety {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
+        }
+
+        .card-icon {
+            font-size: 3.5rem;
+            margin-bottom: 25px;
+            display: block;
+        }
+
+        .interview .card-icon {
+            color: #00d4ff;
+        }
+
+        .safety .card-icon {
+            color: #ff6b6b;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .card-desc {
+            color: #b0b0b0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .card-features {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+        }
+
+        .card-features li {
+            padding: 8px 0;
+            color: #888;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-features li i {
+            color: #00d4ff;
+            width: 20px;
+        }
+
+        .safety .card-features li i {
+            color: #ff6b6b;
+        }
+
+        .start-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .interview .start-btn {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+        }
+
+        .safety .start-btn {
+            background: linear-gradient(90deg, #ff6b6b, #ffc107);
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .logo { font-size: 3rem; }
+            h1 { font-size: 1.8rem; }
+            .subtitle { font-size: 1rem; }
+            .mode-card { padding: 30px 20px; }
+            .card-icon { font-size: 2.5rem; }
+            .card-title { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="logo">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+
+        <h1>TrustVision AI</h1>
+        <p class="subtitle">
+            Real-time video analysis powered by AI. Choose your detection mode below.
+        </p>
+
+        <div class="mode-cards">
+            <!-- Interview Mode -->
+            <a href="/interview" class="mode-card interview">
+                <i class="fas fa-user-check card-icon"></i>
+                <h2 class="card-title">Live Interview</h2>
+                <p class="card-desc">
+                    Real-time liveness detection and deepfake analysis for video interviews and identity verification.
+                </p>
+                <ul class="card-features">
+                    <li><i class="fas fa-check"></i> Blink detection</li>
+                    <li><i class="fas fa-check"></i> Head movement tracking</li>
+                    <li><i class="fas fa-check"></i> Deepfake detection (99% accuracy)</li>
+                    <li><i class="fas fa-check"></i> Real-time analysis</li>
+                </ul>
+                <span class="start-btn">Start Analysis</span>
+            </a>
+
+            <!-- Safety Mode -->
+            <a href="/safety" class="mode-card safety">
+                <i class="fas fa-house-medical card-icon"></i>
+                <h2 class="card-title">Safety Scanner</h2>
+                <p class="card-desc">
+                    Detect hazards and obstacles for senior living. Walk around with your phone to scan rooms.
+                </p>
+                <ul class="card-features">
+                    <li><i class="fas fa-check"></i> Trip hazard detection</li>
+                    <li><i class="fas fa-check"></i> Floor obstacle alerts</li>
+                    <li><i class="fas fa-check"></i> Room-by-room scanning</li>
+                    <li><i class="fas fa-check"></i> Mobile-friendly</li>
+                </ul>
+                <span class="start-btn">Start Scanning</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        TrustVision AI - Powered by YOLO, MediaPipe & HuggingFace
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

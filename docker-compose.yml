@@ -4,12 +4,54 @@
 #   docker-compose up --build
 #
 # Access:
-#   API Docs: http://localhost:8000/docs
-#   Health:   http://localhost:8000/health
+#   Web App:  http://localhost:5000 (Real-time with webcam)
+#   API Docs: http://localhost:8000/docs (File upload API)
 
 services:
   # ==========================================================================
-  # TrustVision AI API
+  # TrustVision AI - Real-time Web Application (Port 5000)
+  # ==========================================================================
+  trustvision-webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    container_name: trustvision-webapp
+
+    ports:
+      - "5001:5000"
+
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+
+    volumes:
+      - trustvision_models:/app/models
+      - ./models:/app/models:ro
+
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+    restart: unless-stopped
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # TrustVision AI - REST API (Port 8000)
   # ==========================================================================
   trustvision-api:
     build:
@@ -17,11 +59,9 @@ services:
       dockerfile: Dockerfile
     container_name: trustvision-api
 
-    # Port mapping
     ports:
       - "8000:8000"
 
-    # Environment variables
     environment:
       - MODEL_CACHE_DIR=/app/models
       - UPLOAD_DIR=/app/uploads
@@ -31,36 +71,27 @@ services:
       - WHISPER_MODEL=base
       - DEBUG=false
 
-    # Persistent volumes
     volumes:
-      # Model cache - persists downloaded models between restarts
       - trustvision_models:/app/models
-      # Upload directory for processing
       - trustvision_uploads:/app/uploads
-      # Sample files for testing
       - ./samples:/app/samples:ro
 
-    # Resource limits
     deploy:
       resources:
         limits:
-          # ML models require significant memory
           memory: 8G
         reservations:
           memory: 4G
 
-    # Health check
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 120s  # Models take time to load
+      start_period: 120s
 
-    # Restart policy
     restart: unless-stopped
 
-    # Logging
     logging:
       driver: "json-file"
       options:
@@ -79,7 +110,7 @@ volumes:
     name: trustvision_uploads
 
 # ==========================================================================
-# Networks (optional, for future services)
+# Networks
 # ==========================================================================
 networks:
   default:
