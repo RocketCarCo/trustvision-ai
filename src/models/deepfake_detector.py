@@ -200,8 +200,8 @@ class DeepfakeDetector:
         real_score = float(probs_np[real_idx])
         fake_score = float(probs_np[fake_idx])
 
-        is_real = real_score > fake_score
-        confidence = max(real_score, fake_score)
+        is_real = bool(real_score > fake_score)
+        confidence = float(max(real_score, fake_score))
 
         return FrameAnalysis(
             timestamp=timestamp,

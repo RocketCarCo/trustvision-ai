@@ -244,8 +244,12 @@ async def analyze_image(
         # Run deepfake detection only
         result = analyzer.deepfake_detector.analyze_single_image(image)
 
-        # Build simplified report
-        trust_score = int(result.confidence * 100) if result.is_authentic else int((1 - result.fake_probability) * 50)
+        # Build simplified report - convert numpy types to Python types
+        is_authentic = bool(result.is_authentic)
+        confidence = float(result.confidence)
+        fake_prob = float(result.fake_probability)
+
+        trust_score = int(confidence * 100) if is_authentic else int((1 - fake_prob) * 50)
 
         return JSONResponse(
             status_code=200,
@@ -254,14 +258,14 @@ async def analyze_image(
                 "status": "completed",
                 "processing_time_seconds": 0.0,
                 "trust_score": trust_score,
-                "verdict": "AUTHENTIC" if result.is_authentic else "SUSPICIOUS",
+                "verdict": "AUTHENTIC" if is_authentic else "SUSPICIOUS",
                 "deepfake": {
-                    "is_authentic": result.is_authentic,
-                    "confidence": round(result.confidence, 3),
-                    "fake_probability": round(result.fake_probability, 3)
+                    "is_authentic": is_authentic,
+                    "confidence": round(confidence, 3),
+                    "fake_probability": round(fake_prob, 3)
                 },
-                "flags": [] if result.is_authentic else ["Potential manipulation detected"],
-                "recommendations": ["Image appears authentic"] if result.is_authentic else ["Image may be manipulated"]
+                "flags": [] if is_authentic else ["Potential manipulation detected"],
+                "recommendations": ["Image appears authentic"] if is_authentic else ["Image may be manipulated"]
             }
         )
 

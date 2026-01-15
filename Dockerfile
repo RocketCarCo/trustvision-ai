@@ -4,7 +4,7 @@
 # =============================================================================
 # Stage 1: Builder - Install dependencies and download models
 # =============================================================================
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -33,7 +33,7 @@ RUN pip install --upgrade pip && \
 # =============================================================================
 # Stage 2: Runtime - Final image
 # =============================================================================
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 # Labels
 LABEL maintainer="TrustVision AI" \
@@ -53,18 +53,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # FFmpeg for audio/video processing
     ffmpeg \
-    # OpenCV dependencies
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender1 \
     libgomp1 \
-    # For dlib
     libopenblas0 \
-    # Cleanup
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
