@@ -10,8 +10,28 @@ A comprehensive ML-powered platform for detecting deepfakes, verifying liveness,
 
 ---
 
+## Demo
+
+### Landing Page
+Choose between Live Interview Analysis or Safety Scanner mode:
+
+![TrustVision AI - Landing Page](docs/screenshots/dd1.png)
+
+### Live Interview Analysis
+Real-time liveness detection with blink counting, deepfake detection, and head tracking:
+
+![Live Interview Analysis](docs/screenshots/dd2.png)
+
+### Video Demo
+Watch the full demo video showing real-time analysis in action:
+
+[![Watch Demo Video](https://img.shields.io/badge/Watch-Demo%20Video-red?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1KxqkzDqiijS974QZ77_rfyNTb7tnoc0X/view)
+
+---
+
 ## Table of Contents
 
+- [Demo](#demo)
 - [Overview](#overview)
 - [Features](#features)
 - [Real-time Web Application](#real-time-web-application)
